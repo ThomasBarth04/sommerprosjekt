@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Bot, Send, BarChart2, LineChart, PieChart, Activity } from "lucide-react";
+import { X, Bot, BarChart2, LineChart, PieChart, Activity } from "lucide-react";
 import {
   BarChart, Bar, LineChart as RLineChart, Line, PieChart as RPieChart, Pie, Cell,
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -26,15 +26,6 @@ const PIE_DATA = [
 ];
 
 type ChartType = "bar" | "line" | "area" | "pie";
-
-const CHAT_HISTORY = [
-  { role: "user", text: "I need a visualisation showing incident trends over the past week." },
-  { role: "ai", text: "Got it! Should I include both new incidents and resolved ones, or just total counts?" },
-  { role: "user", text: "Both would be great. Also colour-code them so it's easy to read." },
-  { role: "ai", text: "Perfect. I'll use a dual-series chart — incidents in dark teal and resolved in green. Should I group by day or hour?" },
-  { role: "user", text: "By day is fine." },
-  { role: "ai", text: "Great. I've drafted the visualisation below. You can toggle between chart types to see which works best for your use case." },
-];
 
 function ChartPreview({ type }: { type: ChartType }) {
   if (type === "bar") {
@@ -109,18 +100,10 @@ interface Props {
 
 export function ModuleBuilderPage({ onBack }: Props) {
   const [chartType, setChartType] = useState<ChartType>("bar");
-  const [input, setInput] = useState("");
-  const [messages, setMessages] = useState(CHAT_HISTORY);
-
-  function handleSend() {
-    if (!input.trim()) return;
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", text: input.trim() },
-      { role: "ai", text: "Thanks! I'll update the module based on your feedback. The preview will reflect your changes." },
-    ]);
-    setInput("");
-  }
+  const [showData, setShowData] = useState(true);
+  const [changeData, setChangeData] = useState(false);
+  const [track, setTrack] = useState("");
+  const [detail, setDetail] = useState("");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-6">
@@ -145,45 +128,74 @@ export function ModuleBuilderPage({ onBack }: Props) {
 
       {/* Two-pane layout */}
       <div className="flex flex-1 overflow-hidden gap-0">
-        {/* Left: conversation */}
+        {/* Left: builder form */}
         <div className="flex flex-col w-[45%] border-r border-[#dbe8e9] h-full">
           <div className="px-4 py-2 border-b border-[#dbe8e9]">
-            <p className="text-[12px] text-[#7c787d] uppercase tracking-wide">Design conversation</p>
+            <p className="text-[12px] text-[#7c787d] uppercase tracking-wide">Build your module</p>
           </div>
-          <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3">
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                {msg.role === "ai" && (
-                  <div className="bg-[#123236] rounded-full size-6 flex items-center justify-center shrink-0 mr-2 mt-0.5">
-                    <Bot size={12} className="text-white" />
+          <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-6">
+            {/* Capabilities */}
+            <div>
+              <p className="text-[15px] text-[#202627] mb-3">What should your application be able to do?</p>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="group relative flex flex-col gap-2 bg-white border border-[#dbe8e9] rounded-[12px] p-3 cursor-pointer hover:border-[#13808c] transition-colors">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={showData}
+                      onChange={(e) => setShowData(e.target.checked)}
+                      className="size-4 accent-[#123236]"
+                    />
+                    <span className="text-[13px] text-[#202627]">Show my data</span>
                   </div>
-                )}
-                <div
-                  className={`max-w-[80%] rounded-[12px] px-3 py-2 text-[13px] leading-5 ${
-                    msg.role === "user"
-                      ? "bg-[#123236] text-white"
-                      : "bg-white border border-[#dbe8e9] text-[#202627]"
-                  }`}
-                >
-                  {msg.text}
-                </div>
+                  <div className="pointer-events-none absolute left-0 top-full z-10 mt-1 w-full rounded-[8px] bg-[#202627] px-3 py-2 text-[12px] leading-4 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                    Your app will display and analyse your data through graphs, reports and dashboards.
+                  </div>
+                </label>
+                <label className="group relative flex flex-col gap-2 bg-white border border-[#dbe8e9] rounded-[12px] p-3 cursor-pointer hover:border-[#13808c] transition-colors">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={changeData}
+                      onChange={(e) => setChangeData(e.target.checked)}
+                      className="size-4 accent-[#123236]"
+                    />
+                    <span className="text-[13px] text-[#202627]">Change my data</span>
+                  </div>
+                  <div className="pointer-events-none absolute left-0 top-full z-10 mt-1 w-full rounded-[8px] bg-[#202627] px-3 py-2 text-[12px] leading-4 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                    Your app will be able to update or add data on your behalf.
+                  </div>
+                </label>
               </div>
-            ))}
+            </div>
+
+            {/* Needs */}
+            <div className="flex flex-col gap-4">
+              <p className="text-[13px] text-[#7c787d]">Tell us what you need this tool to show you</p>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] text-[#202627]">1. What do you want to keep track of with this tool?</label>
+                <input
+                  className="bg-white border border-[#c9c9c9] rounded-[8px] px-3 py-2 text-[13px] text-[#202627] outline-none placeholder:text-[#a9a9a9] focus:border-[#13808c]"
+                  placeholder="e.g. I want to follow my monthly exercises"
+                  value={track}
+                  onChange={(e) => setTrack(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] text-[#202627]">2. How detailed does the information need to be?</label>
+                <input
+                  className="bg-white border border-[#c9c9c9] rounded-[8px] px-3 py-2 text-[13px] text-[#202627] outline-none placeholder:text-[#a9a9a9] focus:border-[#13808c]"
+                  placeholder="e.g. Just a total number, or I need specifics"
+                  value={detail}
+                  onChange={(e) => setDetail(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
-          {/* Input */}
-          <div className="p-3 border-t border-[#dbe8e9] flex gap-2">
-            <input
-              className="flex-1 bg-white border border-[#c9c9c9] rounded-[12px] px-3 py-2 text-[13px] text-[#202627] outline-none placeholder:text-[#7c787d] focus:border-[#13808c]"
-              placeholder="Refine the module…"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            />
-            <button
-              onClick={handleSend}
-              className="bg-[#123236] hover:bg-[#0d2527] text-white rounded-[12px] px-3 py-2 transition-colors"
-            >
-              <Send size={14} />
+          {/* Footer */}
+          <div className="p-3 border-t border-[#dbe8e9] flex justify-end">
+            <button className="bg-[#123236] hover:bg-[#0d2527] text-white text-[13px] rounded-full px-6 py-2 transition-colors">
+              Check
             </button>
           </div>
         </div>
